@@ -57,14 +57,14 @@ local lib = GUI.new({
 
 lib:AddTab("Credits")
 lib:AddTab("Combat")
-lib:AddCategory("Creditmodules", "Credits")
 lib:AddModule("Copy Discord Invite", false, function(state)
     if state then
-        setclipboard("https://discord.gg/your-invite-link")
+        setclipboard("https://discord.gg/QTMwjGhADY")
         lib:Notify("Success", "Discord invite copied to clipboard!", "Success", 3)
     end
 end, "Credits")
 
+lib:AddCategory("Credit", "Credits")
 -- Add category for organization
 lib:AddCategory("Combat Modules", "Combat")
 
@@ -1142,3 +1142,4 @@ if UIS.TouchEnabled and not UIS.KeyboardEnabled then
 end
 
 lib:Notify("Controls", "Press RightShift to toggle GUI", "Info", 9)
+
