@@ -1,0 +1,1144 @@
+local runservice = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local plr = game.Players.LocalPlayer
+local plrgui = plr.PlayerGui
+local sapien = Instance.new("ScreenGui",plrgui)
+local workspace = game.workspace
+local rake = workspace:FindFirstChild("Rake")
+sapien.ResetOnSpawn = false
+
+local stunstick = false
+local AutoOpenDoorW = false
+local FullBrightW = false
+local NoFallDamageW = false
+local autoopenlootW = false
+
+
+local function fullbr()
+    if FullBrightW == true then
+		game.Lighting.FogEnd = 9999999999
+		game.Lighting.FogColor = Color3.fromRGB(79, 125, 166)
+		game.Lighting.OutdoorAmbient = Color3.fromRGB(200, 200, 200)
+		game.Lighting.Ambient = Color3.fromRGB(200, 200, 200)
+		game.Lighting.FogColor = Color3.fromRGB(77, 119, 159)
+		game.Lighting.BloodHourColor.TintColor = Color3.fromRGB(250, 250, 250)
+		game.Lighting.BloodHourColor.Brightness = 0
+		game.Lighting.BloodHourColor.Contrast = 0
+		game.Lighting.BloodHourColor.Saturation = 0
+	end 
+end
+
+
+local function autoopen()
+    if autoopenlootW == true then
+        if #workspace.Debris.SupplyCrates:GetChildren() >= 1 then
+           for i,v in pairs(workspace.Debris.SupplyCrates:GetChildren()) do
+               v:WaitForChild("UnlockValue").Value = 100
+            end   
+        end
+    end
+end
+
+
+runservice.RenderStepped:Connect(function()
+	fullbr()
+	autoopen()
+end)
+local GUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/avgscripter/test/refs/heads/main/Protected_2170037728305020.lua.txt"))()
+
+-- Create GUI
+local lib = GUI.new({
+    Title = "Sapien v2",
+    Size = UDim2.new(0, 350, 0, 500)
+})
+
+-- Add tabs
+
+
+lib:AddTab("Credits")
+lib:AddTab("Combat")
+lib:AddCategory("Creditmodules", "Credits")
+lib:AddModule("Copy Discord Invite", false, function(state)
+    if state then
+        setclipboard("https://discord.gg/your-invite-link")
+        lib:Notify("Success", "Discord invite copied to clipboard!", "Success", 3)
+    end
+end, "Credits")
+
+-- Add category for organization
+lib:AddCategory("Combat Modules", "Combat")
+
+
+local runService = game:GetService("RunService")
+local players = game:GetService("Players")
+local player = players.LocalPlayer
+local auraConnection
+local stunstick = false
+local lastHit = 0
+
+local function getRake()
+    return workspace:FindFirstChild("Rake")
+end
+
+
+local function aura()
+    local char = player.Character
+    local rake = getRake()
+
+    if char and rake and rake:FindFirstChild("Head") and char:FindFirstChild("StunStick") then
+        local stunStick = char.StunStick
+        local now = tick()
+
+        
+        if now - lastHit >= 0.2 then
+            lastHit = now
+            pcall(function()
+                stunStick.Event:FireServer("S")
+                task.wait(0.01)
+                stunStick.Event:FireServer("H", rake.Head)
+            end)
+        end
+    end
+end
+
+local function startAuraLoop()
+    if auraConnection then auraConnection:Disconnect() end
+
+    auraConnection = runService.Heartbeat:Connect(function()
+        if stunstick then
+            aura()
+        end
+    end)
+end
+
+lib:AddModule("StunStick Aura", false, function(state)
+     stunstick = not stunstick
+    if stunstick then
+        startAuraLoop()
+        lib:Notify("Success", "StunStick Aura Enabled", "Success", 2)
+    elseif auraConnection then
+        auraConnection:Disconnect()
+        lib:Notify("Info", "StunStick Aura Disabled", "Info", 2)
+    end
+end, "Combat")
+
+
+workspace.ChildAdded:Connect(function(child)
+    if child.Name == "Rake" then
+        task.wait(0.2)
+        if stunstick then
+            startAuraLoop()
+        end
+    end
+end)
+
+player.CharacterAdded:Connect(function()
+    task.wait(1)
+    if stunstick then
+        startAuraLoop()
+    end
+end)
+
+lib:AddTab("Visuals")
+lib:AddTab("World")
+lib:AddTab("Misc")
+lib:AddCategory("Visual Modules", "Visuals")
+lib:AddCategory("World Modules", "World")
+lib:AddCategory("Misc modules", "Misc")
+
+local PlayersESP = false
+local RakeESP = false
+local ScrapESP = false
+local LootboxESP = false
+local FlaregunESP = false
+
+
+local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
+local workspace = game:GetService("Workspace")
+
+local LocalPlayer = Players.LocalPlayer
+local Camera = workspace.CurrentCamera
+
+local espInstances = {}
+
+local espGroups = {
+	players = {
+		enabled = function() return PlayersESP end,
+		colors = {
+			box = Color3.fromRGB(255, 50, 50),
+			name = Color3.fromRGB(255, 255, 255),
+			dist = Color3.fromRGB(255, 255, 100),
+		},
+		findParts = function()
+			local parts = {}
+			for _, player in ipairs(Players:GetPlayers()) do
+				if player ~= LocalPlayer and player.Character then
+					local hrp = player.Character:FindFirstChild("HumanoidRootPart")
+					if hrp then
+						table.insert(parts, hrp)
+					end
+				end
+			end
+			return parts
+		end,
+		getName = function(part)
+			return part.Parent.Name
+		end,
+	},
+	rake = {
+		enabled = function() return RakeESP end,
+		colors = {
+			box = Color3.fromRGB(255, 100, 0),
+			name = Color3.fromRGB(255, 255, 255),
+			dist = Color3.fromRGB(255, 255, 100),
+		},
+		findParts = function()
+			local parts = {}
+			local rakeModel = workspace:FindFirstChild("Rake")
+			if rakeModel then
+				local hrp = rakeModel:FindFirstChild("HumanoidRootPart")
+				if hrp then
+					table.insert(parts, hrp)
+				end
+			end
+			return parts
+		end,
+		getName = function(part)
+			return "Rake"
+		end,
+	},
+	scraps = {
+		enabled = function() return ScrapESP end,
+		colors = {
+			box = Color3.fromRGB(255, 255, 0),
+			name = Color3.fromRGB(255, 255, 0),
+			dist = Color3.fromRGB(255, 255, 0),
+		},
+		findParts = function()
+			local parts = {}
+			local scrapSpawns = workspace:FindFirstChild("Filter") and workspace.Filter:FindFirstChild("ScrapSpawns")
+			if not scrapSpawns then return parts end
+
+			for _, spawnFolder in ipairs(scrapSpawns:GetChildren()) do
+				for _, scrapModel in ipairs(spawnFolder:GetChildren()) do
+					if scrapModel:IsA("Model") then
+						local scrapPart = scrapModel:FindFirstChild("Scrap")
+						if scrapPart then
+							table.insert(parts, scrapPart)
+						end
+					end
+				end
+			end
+			return parts
+		end,
+		getName = function(part)
+			return part.Parent.Name
+		end,
+	},
+	lootboxes = {
+		enabled = function() return LootboxESP end,
+		colors = {
+			box = Color3.fromRGB(200, 200, 200),
+			name = Color3.fromRGB(255, 255, 255),
+			dist = Color3.fromRGB(255, 255, 255),
+		},
+		findParts = function()
+			local parts = {}
+			local supplyCrates = workspace:FindFirstChild("Debris") and workspace.Debris:FindFirstChild("SupplyCrates")
+			if not supplyCrates then return parts end
+
+			for _, crate in ipairs(supplyCrates:GetChildren()) do
+				local lid = crate:FindFirstChild("lid")
+				if lid then
+					local targetPart = lid:FindFirstChild("1")
+					if targetPart then
+						table.insert(parts, targetPart)
+					end
+				end
+			end
+			return parts
+		end,
+		getName = function(part)
+			return "LootBox"
+		end,
+		getHighlightTarget = function(part)
+			return part and part.Parent and part.Parent.Parent
+		end,
+	},
+	flaregun = {
+		enabled = function() return FlaregunESP end,
+		colors = {
+			box = Color3.fromRGB(127, 0, 255),
+			name = Color3.fromRGB(127, 0, 255),
+			dist = Color3.fromRGB(127, 0, 255),
+		},
+		findParts = function()
+			local parts = {}
+			local pickupModel = workspace:FindFirstChild("FlareGunPickUp")
+			if pickupModel then
+				local flareGunPart = pickupModel:FindFirstChild("FlareGun")
+				if flareGunPart then
+					table.insert(parts, flareGunPart)
+				end
+			end
+			return parts
+		end,
+		getName = function(part)
+			return "Flaregun"
+		end,
+	},
+}
+
+local function removeEspInstance(instance)
+	if not instance then return end
+	pcall(function() instance.box:Remove() end)
+	pcall(function() instance.nameText:Remove() end)
+	pcall(function() instance.distText:Remove() end)
+	pcall(function() instance.highlight:Destroy() end)
+end
+
+local function createEspInstance(part, config)
+	local box = Drawing.new("Square")
+	box.Size = Vector2.new(40, 50)
+	box.Color = config.colors.box
+	box.Thickness = 2
+	box.Filled = false
+	box.Visible = false
+
+	local nameText = Drawing.new("Text")
+	nameText.Size = 16
+	nameText.Color = config.colors.name
+	nameText.Center = true
+	nameText.Outline = true
+	nameText.Text = config.getName(part)
+	nameText.Visible = false
+
+	local distText = Drawing.new("Text")
+	distText.Size = 14
+	distText.Color = config.colors.dist
+	distText.Center = true
+	distText.Outline = true
+	distText.Visible = false
+
+	local highlight = Instance.new("Highlight")
+	highlight.FillColor = config.colors.box
+	highlight.OutlineColor = config.colors.box
+	highlight.FillTransparency = 0.5
+	highlight.OutlineTransparency = 0
+	
+	local highlightTarget
+	if config.getHighlightTarget then
+		highlightTarget = config.getHighlightTarget(part)
+	else
+		highlightTarget = part and part.Parent
+	end
+
+	if highlightTarget then
+		highlight.Parent = highlightTarget
+	end
+
+	return {
+		box = box,
+		nameText = nameText,
+		distText = distText,
+		highlight = highlight,
+		part = part,
+		group = config,
+	}
+end
+
+local function onRenderStepped()
+	local playerHRP = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+	local partsToTrack = {}
+
+	for _, config in pairs(espGroups) do
+		if config.enabled() then
+			local foundParts = config.findParts()
+			for _, part in ipairs(foundParts) do
+				partsToTrack[part] = config
+			end
+		end
+	end
+
+	for part, instance in pairs(espInstances) do
+		if not partsToTrack[part] or not part:IsDescendantOf(workspace) or not instance.highlight or not instance.highlight.Parent then
+			removeEspInstance(instance)
+			espInstances[part] = nil
+		end
+	end
+
+	for part, config in pairs(partsToTrack) do
+		if not espInstances[part] then
+			espInstances[part] = createEspInstance(part, config)
+		end
+
+		local instance = espInstances[part]
+		local partPos, onScreen = Camera:WorldToViewportPoint(part.Position)
+
+		if onScreen then
+			instance.box.Position = Vector2.new(partPos.X - instance.box.Size.X / 2, partPos.Y - instance.box.Size.Y / 2)
+			instance.box.Visible = true
+
+			instance.nameText.Position = Vector2.new(partPos.X, instance.box.Position.Y - 10)
+			instance.nameText.Visible = true
+
+			if playerHRP then
+				local distance = (playerHRP.Position - part.Position).Magnitude
+				instance.distText.Text = string.format("[%.1fm]", distance)
+			end
+			instance.distText.Position = Vector2.new(partPos.X, instance.box.Position.Y + instance.box.Size.Y + 5)
+			instance.distText.Visible = true
+
+		else
+			instance.box.Visible = false
+			instance.nameText.Visible = false
+			instance.distText.Visible = false
+		end
+	end
+end
+
+RunService.RenderStepped:Connect(onRenderStepped)
+
+
+lib:AddModule("Rake Esp", false, function(state)
+       RakeESP = not RakeESP
+end, "Visuals")
+
+lib:AddModule("Scrap Esp", false, function(state)
+      ScrapESP = not ScrapESP
+end, "Visuals")
+
+lib:AddModule("lootbox Esp", false, function(state)
+    LootBoxESP= not LootBoxESP
+    lib:Notify("Success", "Lootbox Esp Enabled", "Success", 2)
+end, "Visuals")
+
+lib:AddModule("FlareGun Esp", false, function(state)
+       FlaregunESP = not FlaregunESP
+end, "Visuals")
+
+lib:AddModule("Players esp", false, function(state)
+       PlayersESP = not PlayersESP
+end, "Visuals")
+
+lib:AddModule("AutoOpenDoor(E)", false, function(state)
+    if AutoOpenDoorW == false then
+          AutoOpenDoorW = true
+    else
+        AutoOpenDoorW = false
+    end
+end, "World")
+
+lib:AddModule("FullBright", false, function(state)
+    if FullBrightW == false then
+        FullBrightW = true
+    else
+        FullBrightW = false
+    end
+end, "World")
+
+lib:AddModule("AutoOpenLootBox", false, function(state)
+    if autoopenlootW == false then
+         autoopenlootW = true
+    else 
+           autoopenlootW = false
+   end
+end, "World")
+
+
+local thirdPersonEnabled = false
+local thirdPersonConnection = nil
+lib:AddModule("Third Person", false, function(state)
+    if not thirdPersonEnabled then
+        thirdPersonEnabled = true
+
+        thirdPersonConnection = runservice.RenderStepped:Connect(function()
+            local player = game:GetService("Players").LocalPlayer
+            if player then
+                player.CameraMaxZoomDistance = math.huge
+                player.CameraMinZoomDistance = 0
+            end
+        end)
+    else
+        thirdPersonEnabled = false
+
+        if thirdPersonConnection then
+            thirdPersonConnection:Disconnect()
+            thirdPersonConnection = nil
+        end
+
+        local player = game:GetService("Players").LocalPlayer
+        if player then
+            player.CameraMaxZoomDistance = 0
+            player.CameraMinZoomDistance = 0
+        end
+    end
+end, "World")
+
+
+local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+local instaKillEnabled = false
+local instaKillConnection = nil
+local rakeMonitorConnection = nil
+
+local function stopInstaKill()
+	if instaKillConnection then
+		instaKillConnection:Disconnect()
+		instaKillConnection = nil
+	end
+end
+
+local function startInstaKillLoop()
+	stopInstaKill() 
+	instaKillConnection = RunService.Heartbeat:Connect(function()
+		local rake = workspace:FindFirstChild("Rake")
+		if rake and rake:FindFirstChild("Monster") then
+			if rake.Monster.Health > 0 then
+				rake.Monster.Health = 0
+			end
+		end
+	end)
+end
+
+
+local function monitorRake()
+	if rakeMonitorConnection then return end 
+
+	rakeMonitorConnection = RunService.Heartbeat:Connect(function()
+		if instaKillEnabled then
+			local rake = workspace:FindFirstChild("Rake")
+			if rake and rake:FindFirstChild("Monster") and rake.Monster.Health > 0 then
+				startInstaKillLoop()
+			end
+		else
+			stopInstaKill()
+		end
+	end)
+end
+
+lib:AddModule("Insta Kill Rake(trap needed)", false, function(state)
+    instaKillEnabled = not instaKillEnabled
+	if instaKillEnabled then
+		monitorRake()
+	else
+		stopInstaKill()
+	end
+end, "Combat")
+
+
+LocalPlayer.CharacterAdded:Connect(function()
+	stopInstaKill()
+end)
+
+local noSlowDownEnabled = false
+local noSlowDownConnection = nil
+lib:AddModule("NoSlowDown", false, function(state)
+    noSlowDownEnabled = not noSlowDownEnabled
+    if noSlowDownEnabled then
+        noSlowDownConnection = runservice.RenderStepped:Connect(function()
+            local char = game.Players.LocalPlayer.Character
+            if char and char:FindFirstChild("Humanoid") then
+                char.Humanoid.WalkSpeed = 30
+            end
+        end)
+    else
+        if noSlowDownConnection then
+            noSlowDownConnection:Disconnect()
+            noSlowDownConnection = nil
+        end
+    end
+end, "World")
+
+
+local placeESPEnabled = false
+
+local places = {
+    powerstation = workspace.Map.PowerStation.StationFolder.StationParts.Model:GetChildren()[19],
+    safehouse = workspace.Map.SafeHouse.RakeBreak.Touch1,
+    observationtower = workspace.Map.ObservationTower:GetChildren()[12],
+    shop = workspace.Map.Shack.Merchant.Head,
+    basecamp = workspace.Map.BaseCamp.Parts:GetChildren()[8]:GetChildren()[65]
+}
+
+local espTexts = {}
+
+local function createESP()
+    for name, part in pairs(places) do
+        local text = Drawing.new("Text")
+        text.Text = name
+        text.Size = 16
+        text.Color = Color3.new(0, 0, 1)
+        text.Outline = true
+        text.Center = true
+        text.Visible = false
+        espTexts[name] = {text = text, part = part}
+    end
+end
+
+local function removeESP()
+    for _, v in pairs(espTexts) do
+        v.text:Remove()
+    end
+    espTexts = {}
+end
+
+game:GetService("RunService").RenderStepped:Connect(function()
+    if not placeESPEnabled then return end
+    local camera = workspace.CurrentCamera
+    for _, v in pairs(espTexts) do
+        local pos, onScreen = camera:WorldToViewportPoint(v.part.Position)
+        v.text.Visible = onScreen
+        if onScreen then
+            v.text.Position = Vector2.new(pos.X, pos.Y)
+        end
+    end
+end)
+
+lib:AddModule("PlaceEsp", false, function(state)
+    placeESPEnabled = not placeESPEnabled
+    if placeESPEnabled then
+        createESP()
+    else
+        removeESP()
+    end
+end, "Visuals")
+
+local infoGuiToggle = false
+local infoGui
+
+local function createInfoGui()
+ if infoGui then infoGui:Destroy() end
+
+ infoGui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
+ infoGui.Name = "InfoGui"
+ infoGui.ResetOnSpawn = false
+
+ local bg = Instance.new("Frame", infoGui)
+ bg.BackgroundColor3 = Color3.new(0.1, 0.1, 0.1)
+ bg.BackgroundTransparency = 1
+ bg.Size = UDim2.new(0, 200, 0, 100)
+ bg.Position = UDim2.new(0, 100, 0, 100)
+ bg.Name = "InfoFrame"
+ bg.Active = true
+
+ local drag = Instance.new("UIDragDetector")
+ drag.Parent = bg
+
+ local targetLabel = Instance.new("TextLabel", bg)
+ targetLabel.Size = UDim2.new(1, 0, 0, 30)
+ targetLabel.Position = UDim2.new(0, 0, 0, 0)
+ targetLabel.BackgroundTransparency = 1
+ targetLabel.TextColor3 = Color3.new(0, 1, 1)
+ targetLabel.Font = Enum.Font.SourceSansBold
+ targetLabel.TextScaled = true
+ targetLabel.Text = "Target: ..."
+
+ local powerLabel = Instance.new("TextLabel", bg)
+ powerLabel.Size = UDim2.new(1, 0, 0, 30)
+ powerLabel.Position = UDim2.new(0, 0, 0, 30)
+ powerLabel.BackgroundTransparency = 1
+ powerLabel.TextColor3 = Color3.new(0, 1, 0)
+ powerLabel.Font = Enum.Font.SourceSansBold
+ powerLabel.TextScaled = true
+ powerLabel.Text = "Power: ..."
+
+ local timerLabel = Instance.new("TextLabel", bg)
+ timerLabel.Size = UDim2.new(1, 0, 0, 30)
+ timerLabel.Position = UDim2.new(0, 0, 0, 60)
+ timerLabel.BackgroundTransparency = 1
+ timerLabel.TextColor3 = Color3.new(1, 0, 0)
+ timerLabel.Font = Enum.Font.SourceSansBold
+ timerLabel.TextScaled = true
+ timerLabel.Text = "Timer: ..."
+
+ task.spawn(function()
+  while infoGui and infoGuiToggle do
+   local ReplicatedStorage = game:GetService("ReplicatedStorage")
+   local targetVal = workspace:FindFirstChild("Rake") and workspace.Rake:FindFirstChild("TargetVal") and workspace.Rake.TargetVal.Value
+   local powerVal = ReplicatedStorage:FindFirstChild("PowerValues") and ReplicatedStorage.PowerValues:FindFirstChild("PowerLevel")
+   local timerVal = ReplicatedStorage:FindFirstChild("Timer")
+
+   targetLabel.Text = "Target: " .. (targetVal and targetVal.Parent.Name or "N/A")
+   powerLabel.Text = "Power: " .. (powerVal and powerVal.Value or "N/A")
+   timerLabel.Text = "Timer: " .. (timerVal and timerVal.Value or "N/A")
+
+   task.wait(0.2)
+  end
+ end)
+end
+
+lib:AddModule("Show Info(Target/Power/Timer)", false, function(state)
+    infoGuiToggle = not infoGuiToggle
+    if infoGuiToggle then
+       createInfoGui()
+   else
+      if infoGui then
+          infoGui:Destroy()
+          infoGui = nil
+     end
+  end
+end, "Visuals")
+
+
+local Players = game:GetService("Players")
+local PathfindingService = game:GetService("PathfindingService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Workspace = game:GetService("Workspace")
+local RunService = game:GetService("RunService")
+
+local player = Players.LocalPlayer
+local walkSpeed = 24
+local dangerDistance = 60
+local hasSold = false
+
+
+local dangerZones = {
+	-- Zone near: -93.24, 29.44, -9.17
+	{min = Vector3.new(-100, 0, -15), max = Vector3.new(-85, 100, -5)},
+	-- Zone near: -109.21, 24.44, -41.74
+	{min = Vector3.new(-115, 0, -47), max = Vector3.new(-103, 100, -36)},
+	-- Zone near: 163.30, 22.59, -16.64
+	{min = Vector3.new(158, 0, -22), max = Vector3.new(168, 100, -11)},
+}
+
+local function isInDangerZone(pos)
+	for _, zone in ipairs(dangerZones) do
+		if pos.X >= zone.min.X and pos.X <= zone.max.X and
+		   pos.Z >= zone.min.Z and pos.Z <= zone.max.Z then
+			return true
+		end
+	end
+	return false
+end
+
+local function getCharacter()
+	local character = player.Character or player.CharacterAdded:Wait()
+	local humanoid = character:WaitForChild("Humanoid")
+	local hrp = character:WaitForChild("HumanoidRootPart")
+	return character, humanoid, hrp
+end
+
+local function isRakeNearby()
+	local _, _, hrp = getCharacter()
+	local rake = Workspace:FindFirstChild("Rake")
+	local rakeHRP = rake and rake:FindFirstChild("HumanoidRootPart")
+	if not rakeHRP then return false end
+
+	local distance = (rakeHRP.Position - hrp.Position).Magnitude
+	if distance <= dangerDistance then
+		local dir = (hrp.Position - rakeHRP.Position).Unit
+		local target = hrp.Position + dir * 60
+		local result = Workspace:Raycast(target + Vector3.new(0, 50, 0), Vector3.new(0, -100, 0), RaycastParams.new())
+		local newY = (result and result.Position.Y + 3) or target.Y
+		target = Vector3.new(target.X, newY, target.Z)
+		moveTo(target)
+		return true
+	end
+	return false
+end
+
+local function moveTo(targetPos)
+	if isInDangerZone(targetPos) then return false end 
+
+	local _, humanoid, hrp = getCharacter()
+	humanoid.WalkSpeed = walkSpeed
+
+	local path = PathfindingService:CreatePath({
+		AgentRadius = 2,
+		AgentHeight = 5,
+		AgentCanJump = false,
+		AgentCanClimb = false,
+	})
+
+	path:ComputeAsync(hrp.Position, targetPos)
+	if path.Status ~= Enum.PathStatus.Success then return false end
+
+	for _, wp in ipairs(path:GetWaypoints()) do
+		if isInDangerZone(wp.Position) then return false end 
+
+		local start = hrp.Position
+		local finish = wp.Position + Vector3.new(0,math.random(0,2.9),0)
+		local dist = (finish - start).Magnitude
+		local duration = dist / walkSpeed
+		local startTime = tick()
+
+		while tick() - startTime < duration do
+			if isRakeNearby() then return false end
+			local alpha = (tick() - startTime) / duration
+			local interpolated = start:Lerp(finish, math.clamp(alpha, 0, 1))
+			hrp.CFrame = CFrame.new(interpolated)
+			RunService.Heartbeat:Wait()
+		end
+
+		hrp.CFrame = CFrame.new(finish)
+	end
+
+	return true
+end
+
+local function findScraps()
+	local scraps = {}
+	for _, folder in pairs(Workspace.Filter.ScrapSpawns:GetChildren()) do
+		for _, item in pairs(folder:GetChildren()) do
+			if item:IsA("Model") and item:FindFirstChild("Scrap") and item.Scrap:IsDescendantOf(Workspace) then
+				table.insert(scraps, item.Scrap)
+			end
+		end
+	end
+	return scraps
+end
+
+local function sellScraps()
+	local shop = Workspace.Map.Shack.Merchant:FindFirstChild("Head")
+	if not shop or isInDangerZone(shop.Position) then return end 
+	moveTo(shop.Position)
+	for _ = 1, math.random(10, 15) do
+		ReplicatedStorage:WaitForChild("ShopEvent"):FireServer("SellScraps", "Scraps")
+	end
+	task.wait()
+end
+
+local function collectScraps()
+	local scraps = findScraps()
+	for _, scrap in ipairs(scraps) do
+		if not scrap:IsDescendantOf(Workspace) then continue end
+		if isInDangerZone(scrap.Position) then continue end 
+		local rake = Workspace:FindFirstChild("Rake")
+		if rake and (rake.HumanoidRootPart.Position - scrap.Position).Magnitude < dangerDistance then continue end
+		if isRakeNearby() then continue end
+
+		for attempt = 1, 3 do
+			if moveTo(scrap.Position) then break end
+			if isRakeNearby() then break end
+		end
+	end
+end
+
+-- Bot Threading Logic
+local rakeRunning = false
+local rakeThread
+
+local function startRakeScript()
+	if rakeRunning then return end
+	rakeRunning = true
+
+	rakeThread = task.spawn(function()
+		while rakeRunning do
+			task.wait(0.05)
+			if isRakeNearby() then continue end
+
+			local isNight = ReplicatedStorage:FindFirstChild("Night") and ReplicatedStorage.Night.Value
+			local scrapFolder = player.Backpack:FindFirstChild("ScrapFolder")
+			local scrapPoints = scrapFolder and scrapFolder:FindFirstChild("Points") and scrapFolder.Points.Value or 0
+			local leaderstats = player:FindFirstChild("leaderstats")
+			local currentPoints = leaderstats and leaderstats:FindFirstChild("Points") and leaderstats.Points.Value or 0
+
+			if isNight then
+				hasSold = false
+				collectScraps()
+			else
+				if scrapPoints > 0 and currentPoints < 100000 and not hasSold then
+					sellScraps()
+					hasSold = true
+				end
+				collectScraps()
+			end
+		end
+	end)
+end
+local UIS = game:GetService("UserInputService")
+UIS.InputBegan:Connect(function(i,g)
+	if g then return end
+	if i.KeyCode == Enum.KeyCode.E and AutoOpenDoorW then
+		workspace.Map.SafeHouse.Door.RemoteEvent:FireServer("Door")
+	end
+end)
+local function stopRakeScript()
+	rakeRunning = false
+	if rakeThread and coroutine.status(rakeThread) ~= "dead" then
+		task.cancel(rakeThread)
+	end
+	rakeThread = nil
+end
+
+
+local rakeBotToggle = false
+local mainGui = _G.Main 
+lib:AddModule("Auto Farm", false, function(state)
+    rakeBotToggle = not rakeBotToggle
+	if rakeBotToggle then
+		startRakeScript()
+	else
+		stopRakeScript()
+	end
+end, "World")
+
+local getinfo = getinfo or debug.getinfo
+local DEBUG = false
+local Hooked = {}
+
+local Detected, Kill
+
+setthreadidentity(2)
+
+for i, v in getgc(true) do
+    if typeof(v) == "table" then
+        local DetectFunc = rawget(v, "Detected")
+        local KillFunc = rawget(v, "Kill")
+    
+        if typeof(DetectFunc) == "function" and not Detected then
+            Detected = DetectFunc
+            
+            local Old; Old = hookfunction(Detected, function(Action, Info, NoCrash)
+                if Action ~= "_" then
+                    if DEBUG then
+                        warn(`Adonis AntiCheat flagged\nMethod: {Action}\nInfo: {Info}`)
+                    end
+                end
+                
+                return true
+            end)
+
+            table.insert(Hooked, Detected)
+        end
+
+        if rawget(v, "Variables") and rawget(v, "Process") and typeof(KillFunc) == "function" and not Kill then
+            Kill = KillFunc
+            local Old; Old = hookfunction(Kill, function(Info)
+                if DEBUG then
+                    warn(`Adonis AntiCheat tried to kill (fallback): {Info}`)
+                end
+            end)
+
+            table.insert(Hooked, Kill)
+        end
+    end
+end
+
+local Old; Old = hookfunction(getrenv().debug.info, newcclosure(function(...)
+    local LevelOrFunc, Info = ...
+
+    if Detected and LevelOrFunc == Detected then
+        if DEBUG then
+            warn(`adonis bypassed`)
+        end
+
+        return coroutine.yield(coroutine.running())
+    end
+    
+    return Old(...)
+end))
+setthreadidentity(7)
+
+local Players = game:GetService("Players")
+local localPlayer = Players.LocalPlayer
+
+local staminaToggle = false
+local hookedModules = {}
+
+local function disableAntiCheat()
+	for _, module in ipairs(getloadedmodules()) do
+		if module.Name == "M_A" then
+			local success, result = pcall(require, module)
+			if success and typeof(result.check) == "function" then
+				result.check = function() return true end
+			end
+		end
+	end
+end
+
+local function enableInfiniteStamina()
+	for _, module in ipairs(getloadedmodules()) do
+		if module.Name == "M_H" and not hookedModules[module] then
+			local success, mod = pcall(require, module)
+			if success and typeof(mod.TakeStamina) == "function" then
+				local original = mod.TakeStamina
+				mod.TakeStamina = function(self, amount)
+					if amount > 0 then
+						return original(self, -0.5)
+					end
+					return original(self, amount)
+				end
+				hookedModules[module] = original
+				warn("[Stamina] Hooked:", module:GetFullName())
+			end
+		end
+	end
+end
+
+local function disableInfiniteStamina()
+	for module, original in pairs(hookedModules) do
+		local success, mod = pcall(require, module)
+		if success and mod then
+			mod.TakeStamina = original
+			warn("[Stamina] Restored:", module:GetFullName())
+		end
+	end
+	table.clear(hookedModules)
+end
+
+
+localPlayer.CharacterAdded:Connect(function()
+	if staminaToggle then
+		task.wait(1)
+		disableAntiCheat()
+		enableInfiniteStamina()
+	end
+end)
+
+lib:AddModule("Infinite Stamina", false, function(state)
+    staminaToggle = not staminaToggle
+	if staminaToggle then
+		disableAntiCheat()
+		enableInfiniteStamina()
+	else
+		disableInfiniteStamina()
+	end
+end, "Misc")
+
+local noFallToggle = false
+
+local mt = getrawmetatable(game)
+setreadonly(mt, false)
+
+local oldNamecall = mt.__namecall
+
+mt.__namecall = newcclosure(function(self, ...)
+	if noFallToggle and tostring(self) == "FD_Event" and getnamecallmethod() == "FireServer" then
+		warn("[NoFallDamage] Blocked FD_Event:FireServer()")
+		return nil
+	end
+	return oldNamecall(self, ...)
+end)
+
+lib:AddModule("No Fall Damage", false, function(state)
+    noFallToggle = not noFallToggle
+end, "Misc")
+
+local antiTrapToggle = false
+
+task.spawn(function()
+	while true do
+		if antiTrapToggle then
+			local debris = workspace:FindFirstChild("Debris")
+			if debris then
+				local traps = debris:FindFirstChild("Traps")
+				if traps then
+					for _, trap in ipairs(traps:GetChildren()) do
+						if trap.Name == "RakeTrapModel" then
+							local hitbox = trap:FindFirstChild("HitBox")
+							if hitbox then
+								local ti = hitbox:FindFirstChildWhichIsA("TouchTransmitter", true)
+								if ti then
+									ti:Destroy()
+								end
+							end
+						end
+					end
+				end
+			end
+		end
+		task.wait(0.5)
+	end
+end)
+
+lib:AddModule("Anti-Trap", false, function(state)
+    antiTrapToggle = not antiTrapToggle
+	if antiTrapToggle then
+		lib:Notify("Success", "Anti-trap enabled", "Success", 2)
+	else
+		lib:Notify("Info", "Anti-trap disabled", "Info", 2)
+	end
+end, "Misc")
+local antiTrapToggle = false
+local antiTrapPlatform = nil 
+
+lib:AddModule("Hide", false, function(state)
+	antiTrapToggle = not antiTrapToggle
+	local plr = game.Players.LocalPlayer
+	local char = plr.Character or plr.CharacterAdded:Wait()
+    local root = char.HumanoidRootPart
+
+	if antiTrapToggle then
+		lib:Notify("Success", "hide enabled", "Success", 2)
+		
+		antiTrapPlatform = Instance.new("Part")
+		antiTrapPlatform.Size = Vector3.new(8, 4, 8)
+		antiTrapPlatform.CFrame = root.CFrame * CFrame.new(0, 10, 0) 
+		antiTrapPlatform.Anchored = true
+		antiTrapPlatform.CanCollide = true
+		antiTrapPlatform.Transparency = 1
+		antiTrapPlatform.Parent = workspace 
+
+		root.CFrame = antiTrapPlatform.CFrame * CFrame.new(0, 5, 0)
+
+       if char.Humanoid then
+             wait(0.4)
+            root.Anchored = true
+        end
+	else
+		lib:Notify("Info", "hide disabled", "Info", 2)
+        if char.Humanoid then
+             root.Anchored = false
+        end
+        if antiTrapPlatform then
+			antiTrapPlatform:Destroy()
+			antiTrapPlatform = nil
+		end
+        
+	end
+end, "Misc")
+lib:Show()
+lib:Notify("Welcome", "Sapien v1 loaded successfully!", "Info", 4)
+guiVisible = true
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+    
+    if input.KeyCode == Enum.KeyCode.RightShift then
+        guiVisible = not guiVisible
+        if guiVisible then
+            lib:Show()
+            lib:Notify("GUI", "GUI shown", "Info", 1)
+        else
+            lib:Hide()
+            lib:Notify("GUI", "GUI hidden", "Info", 1)
+        end
+    end
+end)
+
+local UIS = game:GetService("UserInputService")
+
+if UIS.TouchEnabled and not UIS.KeyboardEnabled then
+    local sap = Instance.new("Frame",sapien)
+    sap.Size = UDim2.new(0,80,0,80)
+    sap.Position = UDim2.new(0.9, 0, 0.2, 0)
+    sap.BackgroundTransparency = 1
+	local button = Instance.new("TextButton")
+	button.Parent = sap
+	button.Size = UDim2.new(0, 50, 0, 50)
+	button.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
+	button.Text = "GUI"
+	button.TextColor3 = Color3.new(1,1,1)
+	button.Font = Enum.Font.SourceSansBold
+	button.TextScaled = true
+	button.AutoButtonColor = false
+
+--	local drag = Instance.new("UIDragDetector", button)
+
+	button.MouseButton1Click:Connect(function()
+		guiVisible = not guiVisible
+		if guiVisible then
+			lib:Show()
+			lib:Notify("GUI", "GUI shown", "Info", 1)
+		else
+			lib:Hide()
+			lib:Notify("GUI", "GUI hidden", "Info", 1)
+		end
+	end)
+end
+
+lib:Notify("Controls", "Press RightShift to toggle GUI", "Info", 9)
